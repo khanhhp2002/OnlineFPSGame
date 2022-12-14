@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -31,6 +32,8 @@ public class PlayerController : MonoBehaviour
     private float heatCounter;
     private bool overHeat;
 
+    public AudioSource audioSourse;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -52,7 +55,7 @@ public class PlayerController : MonoBehaviour
         //Body movement: Gravity + body move direction
         float yVelocity = movement.y;
         moveDir = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
-        movement = ((transform.forward * moveDir.z) + (transform.right * moveDir.x)).normalized * (Input.GetKey(KeyCode.LeftShift) ? runSpeed : movSpeed);
+        movement = ((transform.forward * moveDir.z) + (transform.right * moveDir.x)).normalized * (Input.GetMouseButton(1) ? runSpeed : movSpeed);
         movement.y = yVelocity;
         if (characterController.isGrounded)
         {
@@ -123,6 +126,7 @@ public class PlayerController : MonoBehaviour
 
     private void Shoot()
     {
+        Sound();
         Ray ray = cam.ViewportPointToRay(new Vector3(.5f, .5f, 0f));
         ray.origin = cam.transform.position;
         if (Physics.Raycast(ray, out RaycastHit hit))
@@ -139,5 +143,10 @@ public class PlayerController : MonoBehaviour
 
             UIController.instance.overHeatMessage.gameObject.SetActive(true);
         }
+    }
+
+    private void Sound()
+    {
+        audioSourse.Play();
     }
 }
