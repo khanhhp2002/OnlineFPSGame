@@ -25,12 +25,16 @@ public class PlayerController : MonoBehaviour
     public LayerMask groundLayers;
 
     public GameObject bulletImpact;
-    public float timeBetweenShoots = .1f;
     private float shootCounter;
+    public float muzzleDisplayTime;
+    private float muzzleCounter;
 
-    public float maxHeat = 10f, heatPerShoot = 1f, coolRate = 4f, overHeatCoolRate = 5f;
+    public float maxHeat = 10f, coolRate = 4f, overHeatCoolRate = 5f;
     private float heatCounter;
     private bool overHeat;
+
+    public Gun[] allGuns;
+    private int selectedGun;
 
     public AudioSource audioSourse;
 
@@ -39,8 +43,14 @@ public class PlayerController : MonoBehaviour
     {
         // lock cursor on the center of the screen and disable it
         Cursor.lockState = CursorLockMode.Locked;
+
         cam = Camera.main;
         UIController.instance.weaponHeatSlider.maxValue = maxHeat;
+
+        // Spawn player:
+        Transform playerTransform = SpawnManager.instance.GetSpawnPoint();
+        transform.position = playerTransform.position;
+        transform.rotation = playerTransform.rotation;
     }
 
     // Update is called once per frame
@@ -82,6 +92,15 @@ public class PlayerController : MonoBehaviour
         }
 
         // shooting:
+        if (allGuns[selectedGun].muzzleFlash.activeInHierarchy)
+        {
+            muzzleCounter -= Time.deltaTime;
+            if (muzzleCounter <= 0)
+            {
+                allGuns[selectedGun].muzzleFlash.SetActive(false);
+            }
+        }
+
         if (!overHeat)
         {
             if (Input.GetMouseButtonDown(0))
@@ -89,7 +108,7 @@ public class PlayerController : MonoBehaviour
                 Shoot();
             }
 
-            if (Input.GetMouseButton(0))
+            if (Input.GetMouseButton(0) && allGuns[selectedGun].isAutomatic)
             {
                 shootCounter -= Time.deltaTime;
                 if (shootCounter <= 0)
@@ -117,6 +136,41 @@ public class PlayerController : MonoBehaviour
             }
         }
         UIController.instance.weaponHeatSlider.value = heatCounter;
+
+        // changing weapon:
+        if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
+        {
+            if (selectedGun == allGuns.Length - 1)
+            {
+                selectedGun = 0;
+            }
+            else
+            {
+                selectedGun++;
+            }
+            SwitchWeapon();
+        }
+        else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
+        {
+            if (selectedGun == 0)
+            {
+                selectedGun = allGuns.Length - 1;
+            }
+            else
+            {
+                selectedGun--;
+            }
+            SwitchWeapon();
+        }
+
+        for (int i = 0; i < allGuns.Length; i++)
+        {
+            if (Input.GetKeyDown((i + 1).ToString()))
+            {
+                selectedGun = i;
+                SwitchWeapon();
+            }
+        }
     }
     private void LateUpdate()
     {
@@ -134,8 +188,8 @@ public class PlayerController : MonoBehaviour
             Debug.Log("Hitting: " + hit.collider.gameObject.name);
             Destroy(Instantiate(bulletImpact, hit.point + (hit.normal * 0.002f), Quaternion.LookRotation(hit.normal, Vector3.up)), 10f);
         }
-        shootCounter = timeBetweenShoots;
-        heatCounter += heatPerShoot;
+        shootCounter = allGuns[selectedGun].timeBetweenShots;
+        heatCounter += allGuns[selectedGun].heatPerShot;
         if (heatCounter >= maxHeat)
         {
             heatCounter = maxHeat;
@@ -143,10 +197,23 @@ public class PlayerController : MonoBehaviour
 
             UIController.instance.overHeatMessage.gameObject.SetActive(true);
         }
+        allGuns[selectedGun].muzzleFlash.SetActive(true);
+        muzzleCounter = muzzleDisplayTime;
     }
 
     private void Sound()
     {
         audioSourse.Play();
+    }
+
+    void SwitchWeapon()
+    {
+        foreach (Gun gun in allGuns)
+        {
+            gun.gameObject.SetActive(false);
+            gun.muzzleFlash.SetActive(false);
+        }
+
+        allGuns[selectedGun].gameObject.SetActive(true);
     }
 }
