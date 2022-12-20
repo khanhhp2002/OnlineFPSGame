@@ -13,15 +13,9 @@ public class UIController : MonoBehaviour
     }
     public TMP_Text overHeatMessage;
     public Slider weaponHeatSlider;
-    // Start is called before the first frame update
-    void Start()
-    {
 
-    }
+    public Slider healthPoint;
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
+    public GameObject deathScreen;
+    public TMP_Text deathMessage;
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 using Photon.Realtime;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class Launcher : MonoBehaviourPunCallbacks
 {
@@ -19,7 +19,9 @@ public class Launcher : MonoBehaviourPunCallbacks
     public TMP_InputField roomName;
 
     public GameObject roomScreen;
-    public TMP_Text roomNameText;
+    public TMP_Text roomNameDisplay;
+    public TMP_Text playerName;
+    private List<TMP_Text> allPlayerName = new List<TMP_Text>();
 
     public GameObject errorScreen;
     public TMP_Text errorText;
@@ -27,6 +29,11 @@ public class Launcher : MonoBehaviourPunCallbacks
     public GameObject roomListScreen;
     public RoomButton roomButton;
     private List<RoomButton> allRoomButtons = new List<RoomButton>();
+
+    public GameObject nameInputScreen;
+    public TMP_InputField userName;
+    private bool hasNickName;
+    public GameObject startButton;
     private void Awake()
     {
         Instance = this;
@@ -44,6 +51,7 @@ public class Launcher : MonoBehaviourPunCallbacks
     {
 
         PhotonNetwork.JoinLobby();
+        PhotonNetwork.AutomaticallySyncScene = true;
         loadingText.text = "Joining Lobby...";
     }
 
@@ -51,6 +59,30 @@ public class Launcher : MonoBehaviourPunCallbacks
     {
         menuButtons.SetActive(true);
         Invoke("CloseLoadingScreen", 0.5f);
+        //PhotonNetwork.NickName = Random.Range(0, 1000).ToString();
+        if (!hasNickName)
+        {
+            nameInputScreen.SetActive(true);
+            if (PlayerPrefs.HasKey("playerName"))
+            {
+                userName.text = PlayerPrefs.GetString("playerName");
+            }
+        }
+        else
+        {
+            PhotonNetwork.NickName = PlayerPrefs.GetString("playerName");
+        }
+    }
+
+    public void SetNickName()
+    {
+        if (!string.IsNullOrEmpty(userName.text))
+        {
+            PhotonNetwork.NickName = userName.text;
+            PlayerPrefs.SetString("playerName", userName.text);
+            hasNickName = true;
+            nameInputScreen.SetActive(false);
+        }
     }
 
     public void CreateRoom()
@@ -70,8 +102,49 @@ public class Launcher : MonoBehaviourPunCallbacks
     public override void OnJoinedRoom()
     {
         roomScreen.SetActive(true);
-        roomNameText.text = PhotonNetwork.CurrentRoom.Name;
+        roomNameDisplay.text = PhotonNetwork.CurrentRoom.Name;
         Invoke("CloseLoadingScreen", 0.5f);
+        ListAllPlayer();
+        if (PhotonNetwork.IsMasterClient)
+        {
+            startButton.GetComponent<Button>().interactable = true;
+        }
+        else
+        {
+            startButton.GetComponent<Button>().interactable = false;
+        }
+    }
+
+    public override void OnPlayerEnteredRoom(Player newPlayer)
+    {
+
+        TMP_Text newPlayerName = Instantiate(playerName, playerName.transform.parent);
+        newPlayerName.text = newPlayer.NickName;
+        newPlayerName.gameObject.SetActive(true);
+        allPlayerName.Add(newPlayerName);
+    }
+
+    public override void OnPlayerLeftRoom(Player otherPlayer)
+    {
+        ListAllPlayer();
+    }
+
+    private void ListAllPlayer()
+    {
+        foreach (TMP_Text player in allPlayerName)
+        {
+            Destroy(player.gameObject);
+        }
+        allPlayerName.Clear();
+        Player[] players = PhotonNetwork.PlayerList;
+        playerName.gameObject.SetActive(false);
+        for (int i = 0; i < players.Length; i++)
+        {
+            TMP_Text newPlayerName = Instantiate(playerName, playerName.transform.parent);
+            newPlayerName.text = players[i].NickName;
+            newPlayerName.gameObject.SetActive(true);
+            allPlayerName.Add(newPlayerName);
+        }
     }
 
     public override void OnCreateRoomFailed(short returnCode, string message)
@@ -129,6 +202,27 @@ public class Launcher : MonoBehaviourPunCallbacks
 
     public void Play()
     {
-        SceneManager.LoadScene("Map 1");
+#if UNITY_EDITOR
+        PhotonNetwork.CreateRoom("test");
+        loadingText.text = "Creating room";
+        Invoke("CloseLoadingScreen", 0.5f);
+#endif
+    }
+
+    public void StartGame()
+    {
+        PhotonNetwork.LoadLevel("Map 1");
+    }
+
+    public override void OnMasterClientSwitched(Player newMasterClient)
+    {
+        if (PhotonNetwork.IsMasterClient)
+        {
+            startButton.GetComponent<Button>().interactable = true;
+        }
+        else
+        {
+            startButton.GetComponent<Button>().interactable = false;
+        }
     }
 }

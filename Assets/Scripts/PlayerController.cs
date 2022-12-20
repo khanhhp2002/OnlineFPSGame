@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using Photon.Pun;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviourPunCallbacks
 {
     public Transform viewPoint;
     public float mouseSensitivity = 1f;
@@ -36,7 +37,16 @@ public class PlayerController : MonoBehaviour
     public Gun[] allGuns;
     private int selectedGun;
 
+    public GameObject playerHitImpact;
+
     public AudioSource audioSourse;
+
+    public int maxHealth = 100;
+    private int currentHealth;
+
+    public Animator anim;
+    public GameObject playerModel;
+    public Transform ownerGunholder, otherGunholder;
 
     // Start is called before the first frame update
     void Start()
@@ -45,17 +55,39 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
 
         cam = Camera.main;
-        UIController.instance.weaponHeatSlider.maxValue = maxHeat;
 
         // Spawn player:
-        Transform playerTransform = SpawnManager.instance.GetSpawnPoint();
-        transform.position = playerTransform.position;
-        transform.rotation = playerTransform.rotation;
+        //Transform playerTransform = SpawnManager.instance.GetSpawnPoint();
+        //transform.position = playerTransform.position;
+        //transform.rotation = playerTransform.rotation;
+
+        // add health:
+        currentHealth = maxHealth;
+
+        if (photonView.IsMine)
+        {
+            playerModel.SetActive(false);
+            UIController.instance.weaponHeatSlider.maxValue = maxHeat;
+            UIController.instance.healthPoint.maxValue = maxHealth;
+            UIController.instance.healthPoint.value = maxHealth;
+        }
+        else
+        {
+            ownerGunholder.parent = otherGunholder.parent;
+            ownerGunholder.localPosition = otherGunholder.localPosition;
+            ownerGunholder.localRotation = otherGunholder.localRotation;
+        }
+
+        photonView.RPC("SetGun", RpcTarget.All, selectedGun);
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (!photonView.IsMine)
+        {
+            return;
+        }
         //View point direction:
         mouseInput = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * mouseSensitivity;
         verticalRotStore += mouseInput.y;
@@ -148,7 +180,7 @@ public class PlayerController : MonoBehaviour
             {
                 selectedGun++;
             }
-            SwitchWeapon();
+            photonView.RPC("SetGun", RpcTarget.All, selectedGun);
         }
         else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
         {
@@ -160,7 +192,7 @@ public class PlayerController : MonoBehaviour
             {
                 selectedGun--;
             }
-            SwitchWeapon();
+            photonView.RPC("SetGun", RpcTarget.All, selectedGun);
         }
 
         for (int i = 0; i < allGuns.Length; i++)
@@ -168,14 +200,20 @@ public class PlayerController : MonoBehaviour
             if (Input.GetKeyDown((i + 1).ToString()))
             {
                 selectedGun = i;
-                SwitchWeapon();
+                photonView.RPC("SetGun", RpcTarget.All, selectedGun);
             }
         }
+
+        anim.SetBool("grounded", characterController.isGrounded);
+        anim.SetFloat("speed", moveDir.magnitude);
     }
     private void LateUpdate()
     {
-        cam.transform.position = viewPoint.position;
-        cam.transform.rotation = viewPoint.rotation;
+        if (photonView.IsMine)
+        {
+            cam.transform.position = viewPoint.position;
+            cam.transform.rotation = viewPoint.rotation;
+        }
     }
 
     private void Shoot()
@@ -185,8 +223,17 @@ public class PlayerController : MonoBehaviour
         ray.origin = cam.transform.position;
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            Debug.Log("Hitting: " + hit.collider.gameObject.name);
-            Destroy(Instantiate(bulletImpact, hit.point + (hit.normal * 0.002f), Quaternion.LookRotation(hit.normal, Vector3.up)), 10f);
+            if (hit.collider.gameObject.tag == "Player")
+            {
+                Debug.Log("Hitting: " + hit.collider.gameObject.GetPhotonView().Owner.NickName);
+                PhotonNetwork.Instantiate(playerHitImpact.name, hit.point, Quaternion.identity);
+                hit.collider.gameObject.GetPhotonView().RPC("DealDamage", RpcTarget.All, photonView.Owner.NickName, allGuns[selectedGun].DamagePerShot);
+            }
+            else
+            {
+                Debug.Log("Hitting: " + hit.collider.gameObject.name);
+                Destroy(Instantiate(bulletImpact, hit.point + (hit.normal * 0.002f), Quaternion.LookRotation(hit.normal, Vector3.up)), 10f);
+            }
         }
         shootCounter = allGuns[selectedGun].timeBetweenShots;
         heatCounter += allGuns[selectedGun].heatPerShot;
@@ -199,6 +246,27 @@ public class PlayerController : MonoBehaviour
         }
         allGuns[selectedGun].muzzleFlash.SetActive(true);
         muzzleCounter = muzzleDisplayTime;
+    }
+    [PunRPC]
+    public void DealDamage(string damager, int damageAmount)
+    {
+        TakeDamage(damager, damageAmount);
+    }
+
+    public void TakeDamage(string damager, int damageAmount)
+    {
+        if (photonView.IsMine)
+        {
+            currentHealth -= damageAmount;
+            if (currentHealth <= 0)
+            {
+                currentHealth = 0;
+                PlayerSpawner.Instance.Die(damager);
+            }
+            UIController.instance.healthPoint.value = currentHealth;
+        }
+        //Debug.Log(photonView.Owner.NickName + "have been hit by " + damager);
+        //gameObject.SetActive(false);
     }
 
     private void Sound()
@@ -215,5 +283,15 @@ public class PlayerController : MonoBehaviour
         }
 
         allGuns[selectedGun].gameObject.SetActive(true);
+    }
+    [PunRPC]
+    public void SetGun(int gunNum)
+    {
+        if (gunNum < allGuns.Length)
+        {
+            //xd
+            selectedGun = gunNum;
+            SwitchWeapon();
+        }
     }
 }
