@@ -18,4 +18,32 @@ public class UIController : MonoBehaviour
 
     public GameObject deathScreen;
     public TMP_Text deathMessage;
+
+    public GameObject playerInfo;
+
+    public GameObject statsScreen;
+
+    public void UpdateStats(List<PlayerInfomation> allPlayerInfo)
+    {
+        for (int i = 1; i < statsScreen.transform.childCount; i++)
+        {
+            if (i == 1)
+            {
+                continue;
+            }
+            else
+            {
+                Destroy(statsScreen.transform.GetChild(i).gameObject);
+            }
+        }
+        for (int i = 0; i < allPlayerInfo.Count; i++)
+        {
+            GameObject newPlayerInfo = Instantiate(playerInfo, playerInfo.transform.parent);
+            newPlayerInfo.transform.GetChild(0).GetComponent<TMP_Text>().text = (i + 1).ToString();
+            newPlayerInfo.transform.GetChild(1).GetComponent<TMP_Text>().text = allPlayerInfo[i].name;
+            newPlayerInfo.transform.GetChild(2).GetComponent<TMP_Text>().text = allPlayerInfo[i].kills.ToString();
+            newPlayerInfo.transform.GetChild(3).GetComponent<TMP_Text>().text = allPlayerInfo[i].deaths.ToString();
+            Debug.Log(newPlayerInfo.transform.GetChild(1).GetComponent<TMP_Text>().text = allPlayerInfo[i].name);
+        }
+    }
 }

@@ -112,15 +112,27 @@ public class PlayerController : MonoBehaviourPunCallbacks
         characterController.Move(movement * Time.deltaTime);
 
         // Cursor mode:
-        if (Input.GetKeyDown(KeyCode.Tab))
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             // Unlock
             Cursor.lockState = CursorLockMode.None;
         }
-        else if (Cursor.lockState == CursorLockMode.None && Input.GetKeyUp(KeyCode.Tab))
+        else if (Cursor.lockState == CursorLockMode.None && Input.GetKeyUp(KeyCode.Escape))
         {
             //Lock
             Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        // Stats mode:
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            // Unlock
+            UIController.instance.statsScreen.SetActive(true);
+        }
+        else if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            //Lock
+            UIController.instance.statsScreen.SetActive(false);
         }
 
         // shooting:
@@ -227,7 +239,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
             {
                 Debug.Log("Hitting: " + hit.collider.gameObject.GetPhotonView().Owner.NickName);
                 PhotonNetwork.Instantiate(playerHitImpact.name, hit.point, Quaternion.identity);
-                hit.collider.gameObject.GetPhotonView().RPC("DealDamage", RpcTarget.All, photonView.Owner.NickName, allGuns[selectedGun].DamagePerShot);
+                hit.collider.gameObject.GetPhotonView().RPC("DealDamage", RpcTarget.All, photonView.Owner.NickName, allGuns[selectedGun].DamagePerShot, PhotonNetwork.LocalPlayer.ActorNumber);
             }
             else
             {
@@ -248,12 +260,12 @@ public class PlayerController : MonoBehaviourPunCallbacks
         muzzleCounter = muzzleDisplayTime;
     }
     [PunRPC]
-    public void DealDamage(string damager, int damageAmount)
+    public void DealDamage(string damager, int damageAmount, int actor)
     {
-        TakeDamage(damager, damageAmount);
+        TakeDamage(damager, damageAmount, actor);
     }
 
-    public void TakeDamage(string damager, int damageAmount)
+    public void TakeDamage(string damager, int damageAmount, int actor)
     {
         if (photonView.IsMine)
         {
@@ -262,6 +274,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
             {
                 currentHealth = 0;
                 PlayerSpawner.Instance.Die(damager);
+                MatchManager.instance.UpdateStatsSend(actor, true, 1);
             }
             UIController.instance.healthPoint.value = currentHealth;
         }

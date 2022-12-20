@@ -35,7 +35,10 @@ public class PlayerSpawner : MonoBehaviour
 
     public void Die(string message)
     {
-        UIController.instance.deathMessage.text = "you were kill by " + message;
+        UIController.instance.deathMessage.text = "You were kill by " + message;
+
+        MatchManager.instance.UpdateStatsSend(PhotonNetwork.LocalPlayer.ActorNumber, false, 1);
+
         if (player != null)
         {
             StartCoroutine(DieCo());
