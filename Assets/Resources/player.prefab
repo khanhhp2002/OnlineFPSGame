@@ -51,6 +51,8 @@ MonoBehaviour:
   heatPerShot: 2
   muzzleFlash: {fileID: 7188539997092935531}
   DamagePerShot: 25
+  canZoom: 0
+  fireSound: {fileID: 0}
 --- !u!1 &3444893554320183889
 GameObject:
   m_ObjectHideFlags: 0
@@ -168,6 +170,8 @@ MonoBehaviour:
   heatPerShot: 5
   muzzleFlash: {fileID: 4321655460197011230}
   DamagePerShot: 50
+  canZoom: 1
+  fireSound: {fileID: 0}
 --- !u!1 &4209355809508035832
 GameObject:
   m_ObjectHideFlags: 0
@@ -251,6 +255,8 @@ MonoBehaviour:
   heatPerShot: 2
   muzzleFlash: {fileID: 4968862423790649062}
   DamagePerShot: 25
+  canZoom: 0
+  fireSound: {fileID: 8300000, guid: 9b8cf30945ad85148b51c040f48adc21, type: 3}
 --- !u!1 &5203236321083386000
 GameObject:
   m_ObjectHideFlags: 0
@@ -621,6 +627,8 @@ MonoBehaviour:
   heatPerShot: 5
   muzzleFlash: {fileID: 4968862423740703487}
   DamagePerShot: 50
+  canZoom: 1
+  fireSound: {fileID: 8300000, guid: d4fe29e6375ac07408e35ab5f94409ca, type: 3}
 --- !u!1 &5203236321943939091
 GameObject:
   m_ObjectHideFlags: 0
@@ -703,6 +711,8 @@ MonoBehaviour:
   heatPerShot: 1
   muzzleFlash: {fileID: 4968862423904877648}
   DamagePerShot: 15
+  canZoom: 0
+  fireSound: {fileID: 8300000, guid: e8b0bb6cfb805504a8ed2d40cb08b930, type: 3}
 --- !u!1 &5203236322120852104
 GameObject:
   m_ObjectHideFlags: 0
@@ -869,6 +879,8 @@ MonoBehaviour:
   heatPerShot: 1
   muzzleFlash: {fileID: 5439326051299212782}
   DamagePerShot: 15
+  canZoom: 0
+  fireSound: {fileID: 0}
 --- !u!1001 &3979197931376259663
 PrefabInstance:
   m_ObjectHideFlags: 0

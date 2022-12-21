@@ -32,7 +32,7 @@ public class Launcher : MonoBehaviourPunCallbacks
 
     public GameObject nameInputScreen;
     public TMP_InputField userName;
-    private bool hasNickName;
+    public static bool hasNickName;
     public GameObject startButton;
     private void Awake()
     {
@@ -45,6 +45,11 @@ public class Launcher : MonoBehaviourPunCallbacks
         loadingText.text = "Connecting To Network...";
 
         PhotonNetwork.ConnectUsingSettings();
+#if UNITY_EDITOR
+        //UIController.instance.
+#endif
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     public override void OnConnectedToMaster()
@@ -211,7 +216,7 @@ public class Launcher : MonoBehaviourPunCallbacks
 
     public void StartGame()
     {
-        PhotonNetwork.LoadLevel("Map 1");
+        PhotonNetwork.LoadLevel("Map 2");
     }
 
     public override void OnMasterClientSwitched(Player newMasterClient)

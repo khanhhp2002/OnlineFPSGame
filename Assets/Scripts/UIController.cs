@@ -23,6 +23,10 @@ public class UIController : MonoBehaviour
 
     public GameObject statsScreen;
 
+    public TMP_Text timer;
+
+    public GameObject leaveButton;
+
     public void UpdateStats(List<PlayerInfomation> allPlayerInfo)
     {
         for (int i = 1; i < statsScreen.transform.childCount; i++)

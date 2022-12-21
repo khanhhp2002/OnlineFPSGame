@@ -48,6 +48,8 @@ public class PlayerController : MonoBehaviourPunCallbacks
     public GameObject playerModel;
     public Transform ownerGunholder, otherGunholder;
 
+    private bool isZoom = false;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -97,7 +99,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         //Body movement: Gravity + body move direction
         float yVelocity = movement.y;
         moveDir = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
-        movement = ((transform.forward * moveDir.z) + (transform.right * moveDir.x)).normalized * (Input.GetMouseButton(1) ? runSpeed : movSpeed);
+        movement = ((transform.forward * moveDir.z) + (transform.right * moveDir.x)).normalized * (Input.GetKey(KeyCode.LeftShift) ? runSpeed : movSpeed);
         movement.y = yVelocity;
         if (characterController.isGrounded)
         {
@@ -218,6 +220,21 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
         anim.SetBool("grounded", characterController.isGrounded);
         anim.SetFloat("speed", moveDir.magnitude);
+
+        //aim mode:
+        if (Input.GetMouseButtonDown(1) && allGuns[selectedGun].canZoom)
+        {
+            if (!isZoom)
+            {
+                Camera.main.fieldOfView = 15;
+                isZoom = true;
+            }
+            else
+            {
+                Camera.main.fieldOfView = 60;
+                isZoom = false;
+            }
+        }
     }
     private void LateUpdate()
     {
@@ -289,6 +306,9 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     void SwitchWeapon()
     {
+        audioSourse.clip = allGuns[selectedGun].fireSound;
+        isZoom = false;
+        Camera.main.fieldOfView = 60;
         foreach (Gun gun in allGuns)
         {
             gun.gameObject.SetActive(false);
